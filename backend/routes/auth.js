@@ -1,9 +1,15 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
+const twilio = require('twilio');
 const User = require('../models/User');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
+
+// Initialize Twilio client if credentials exist in env
+const twilioClient = process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN
+  ? twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN)
+  : null;
 
 const signToken = (id) =>
   jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -65,21 +71,41 @@ router.post('/send-otp', async (req, res) => {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
 
     // Store OTP in user document with 5-minute expiry
-    // In production: send via SMS gateway (Twilio, MSG91, etc.)
     user.otpCode = otp;
     user.otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
 
-    // TODO: Integrate SMS gateway here
-    // await smsService.send(cleaned, `Your RailNexus OTP is: ${otp}`);
+    // Send SMS via Twilio if configured
+    let smsSent = false;
+    if (twilioClient && process.env.TWILIO_PHONE_NUMBER) {
+      try {
+        await twilioClient.messages.create({
+          body: `Your RailNexus OTP verification code is: ${otp}. It is valid for 5 minutes.`,
+          from: process.env.TWILIO_PHONE_NUMBER,
+          to: `+91${cleaned}`
+        });
+        console.log(`📱 Real OTP sent successfully via Twilio to +91${cleaned}`);
+        smsSent = true;
+      } catch (smsError) {
+        console.error('❌ Failed to send SMS via Twilio:', smsError.message);
+        // In production, throw error; in development, fall back to console
+        if (process.env.NODE_ENV === 'production') {
+          return res.status(500).json({ error: 'Failed to send SMS OTP. Please try again.' });
+        }
+      }
+    }
 
-    // In development, return OTP in response for testing
     const response = { message: `OTP sent to +91 ${cleaned}` };
+
+    // In development mode, auto-fill only if Twilio SMS was NOT sent
     if (process.env.NODE_ENV === 'development') {
-      response.otp = otp; // Remove in production
+      if (!smsSent) {
+        response.otp = otp; // Returned to frontend for auto-fill in simulator mode
+      }
       console.log(`\n\n========================================`);
-      console.log(`🔔 REAL-TIME OTP GENERATED FOR ${cleaned}`);
+      console.log(`🔔 REAL-TIME OTP GENERATED FOR +91 ${cleaned}`);
       console.log(`🔑 OTP CODE: ${otp}`);
+      console.log(`📡 Twilio Status: ${smsSent ? 'SENT' : 'NOT CONFIGURED (Simulated)'}`);
       console.log(`========================================\n\n`);
     }
 
