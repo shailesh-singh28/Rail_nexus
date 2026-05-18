@@ -81,7 +81,7 @@ router.post('/send-otp', async (req, res) => {
 
     if (process.env.SMS_ENABLED === 'true' && process.env.SMS_API_URL) {
       try {
-        const smsMessage = `Your RailNexus OTP verification code is: ${otp}`;
+        const smsMessage = `Your login OTP is ${otp}. Do Not Share With Anyone. - STSECR`;
         
         // Build the request query parameters for Procom Solution
         const queryParams = new URLSearchParams({
