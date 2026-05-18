@@ -75,9 +75,48 @@ router.post('/send-otp', async (req, res) => {
     user.otpExpiry = new Date(Date.now() + 5 * 60 * 1000);
     await user.save({ validateBeforeSave: false });
 
-    // Send SMS via Twilio if configured
+    // Send SMS via Procom Solution or Twilio if configured
     let smsSent = false;
-    if (twilioClient && process.env.TWILIO_PHONE_NUMBER) {
+    let gatewayUsed = 'None';
+
+    if (process.env.SMS_ENABLED === 'true' && process.env.SMS_API_URL) {
+      try {
+        const smsMessage = `Your RailNexus OTP verification code is: ${otp}`;
+        
+        // Build the request query parameters for Procom Solution
+        const queryParams = new URLSearchParams({
+          username: process.env.SMS_USERNAME || '',
+          password: process.env.SMS_API_PASSWORD || '',
+          sender: process.env.SMS_SENDER_ID || '',
+          to: cleaned, // Standard Indian gateway parameter
+          mobile: cleaned, // Fallback parameter
+          message: smsMessage,
+          unicode: process.env.SMS_UNICODE || '1',
+          priority: process.env.SMS_PRIORITY || '11',
+          entityid: process.env.SMS_ENTITY_ID || ''
+        });
+
+        // Add DLT Template ID if provided in env
+        if (process.env.SMS_TEMPLATE_ID) {
+          queryParams.append('tempid', process.env.SMS_TEMPLATE_ID);
+        }
+
+        const fullUrl = `${process.env.SMS_API_URL}?${queryParams.toString()}`;
+        console.log(`📡 Sending SMS via Procom Solution to +91${cleaned}...`);
+        
+        const smsRes = await fetch(fullUrl, { method: 'GET' });
+        const smsTextResponse = await smsRes.text();
+        
+        console.log(`📱 Procom Solution Response:`, smsTextResponse);
+        smsSent = true;
+        gatewayUsed = 'Procom Solution';
+      } catch (smsError) {
+        console.error('❌ Failed to send SMS via Procom Solution:', smsError.message);
+        if (process.env.NODE_ENV === 'production') {
+          return res.status(500).json({ error: 'Failed to send SMS OTP via gateway. Please try again.' });
+        }
+      }
+    } else if (twilioClient && process.env.TWILIO_PHONE_NUMBER) {
       try {
         await twilioClient.messages.create({
           body: `Your RailNexus OTP verification code is: ${otp}. It is valid for 5 minutes.`,
@@ -86,9 +125,9 @@ router.post('/send-otp', async (req, res) => {
         });
         console.log(`📱 Real OTP sent successfully via Twilio to +91${cleaned}`);
         smsSent = true;
+        gatewayUsed = 'Twilio';
       } catch (smsError) {
         console.error('❌ Failed to send SMS via Twilio:', smsError.message);
-        // In production, throw error; in development, fall back to console
         if (process.env.NODE_ENV === 'production') {
           return res.status(500).json({ error: 'Failed to send SMS OTP. Please try again.' });
         }
@@ -97,7 +136,7 @@ router.post('/send-otp', async (req, res) => {
 
     const response = { message: `OTP sent to +91 ${cleaned}` };
 
-    // In development mode, auto-fill only if Twilio SMS was NOT sent
+    // In development mode, auto-fill only if SMS was NOT sent
     if (process.env.NODE_ENV === 'development') {
       if (!smsSent) {
         response.otp = otp; // Returned to frontend for auto-fill in simulator mode
@@ -105,7 +144,8 @@ router.post('/send-otp', async (req, res) => {
       console.log(`\n\n========================================`);
       console.log(`🔔 REAL-TIME OTP GENERATED FOR +91 ${cleaned}`);
       console.log(`🔑 OTP CODE: ${otp}`);
-      console.log(`📡 Twilio Status: ${smsSent ? 'SENT' : 'NOT CONFIGURED (Simulated)'}`);
+      console.log(`📡 SMS Status: ${smsSent ? 'SENT' : 'NOT CONFIGURED (Simulated)'}`);
+      console.log(`🔌 Active Gateway: ${gatewayUsed}`);
       console.log(`========================================\n\n`);
     }
 
