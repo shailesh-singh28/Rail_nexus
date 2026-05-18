@@ -215,4 +215,62 @@ router.get('/me', protect, async (req, res) => {
   res.json({ user: req.user });
 });
 
+// ── POST /api/auth/register ───────────────────────────────
+// Register a new user (generates user/admin ID)
+router.post('/register', async (req, res) => {
+  try {
+    const { name, email, phone, password, role, division } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: 'Name, email, and password are required.' });
+    }
+
+    const existingEmail = await User.findOne({ email: email.toLowerCase() });
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Email is already registered.' });
+    }
+
+    let cleanedPhone = undefined;
+    if (phone) {
+      cleanedPhone = phone.replace(/\D/g, '').slice(-10);
+      if (cleanedPhone.length === 10) {
+        const existingPhone = await User.findOne({ phone: cleanedPhone });
+        if (existingPhone) {
+          return res.status(400).json({ error: 'Phone number is already registered.' });
+        }
+      } else if (cleanedPhone.length > 0) {
+        return res.status(400).json({ error: 'Enter a valid 10-digit mobile number.' });
+      }
+    }
+
+    let userDivision = division;
+    if (!userDivision) {
+      const Division = require('../models/Division');
+      const firstDiv = await Division.findOne();
+      if (firstDiv) {
+        userDivision = firstDiv._id;
+      }
+    }
+
+    const newUser = await User.create({
+      name,
+      email: email.toLowerCase(),
+      phone: cleanedPhone || undefined,
+      password,
+      role: role || 'engineer',
+      division: userDivision
+    });
+
+    const token = signToken(newUser._id);
+    res.status(201).json({
+      message: `${role === 'admin' ? 'Admin' : 'User'} registered successfully.`,
+      token,
+      user: newUser
+    });
+  } catch (err) {
+    console.error('Registration error:', err);
+    res.status(500).json({ error: 'Registration failed. Please try again.' });
+  }
+});
+
 module.exports = router;

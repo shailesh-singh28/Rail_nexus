@@ -231,7 +231,7 @@ async function seed() {
   console.log('✅ Form schemas seeded');
 
   // ── Admin User ────────────────────────────────────────
-  await User.create({
+  const adminUser = await User.create({
     name: 'Admin User',
     email: 'admin@railnexus.in',
     phone: '8127918849',
@@ -251,6 +251,7 @@ async function seed() {
 
   console.log('✅ Users seeded');
   console.log('\n🎉 Seed complete!');
+  console.log(`   Admin ID: ${adminUser._id}`);
   console.log('   Admin:    admin@railnexus.in    / Admin@1234 / Phone: 8127918849');
   console.log('   Engineer: engineer@railnexus.in / Engineer@1234 / Phone: 9793975397');
 

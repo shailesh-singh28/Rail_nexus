@@ -4,7 +4,7 @@ import { MapPin, ArrowRight } from 'lucide-react';
 import useAppStore from '@/store/useAppStore';
 import api from '@/lib/api';
 
-const LocationSelector = ({ demoData = null }) => {
+const LocationSelector = () => {
   const {
     divisionId, setDivision,
     majorSectionId, setMajorSection,
@@ -32,40 +32,30 @@ const LocationSelector = ({ demoData = null }) => {
   }, [majorSectionId]);
 
   const fetchDivisions = async () => {
-    if (demoData) { setDivisions(demoData.divisions); return; }
     try {
       const res = await api.get('/divisions');
       setDivisions(res.data);
       setError('');
     } catch (err) {
-      if (err.friendlyMessage) {
-        setError('Server offline — using demo data.');
-        setDivisions([]); // demo mode is handled at page level
-      } else {
-        setError('Failed to load divisions. Please refresh.');
-      }
+      setError(err.friendlyMessage || 'Failed to load divisions. Please refresh.');
     }
   };
 
   const fetchMajorSections = async (id) => {
-    if (demoData) { setMajorSections(demoData.majorSections[id] || []); return; }
     try {
       const res = await api.get(`/major-sections/${id}`);
       setMajorSections(res.data);
     } catch (err) {
-      if (err.friendlyMessage) setMajorSections([]);
-      else setError('Failed to load major sections.');
+      setError('Failed to load major sections.');
     }
   };
 
   const fetchSections = async (id) => {
-    if (demoData) { setSections(demoData.sections[id] || []); return; }
     try {
       const res = await api.get(`/sections/${id}`);
       setSections(res.data);
     } catch (err) {
-      if (err.friendlyMessage) setSections([]);
-      else setError('Failed to load sections.');
+      setError('Failed to load sections.');
     }
   };
 

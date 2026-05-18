@@ -142,7 +142,6 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
-  const [serverOffline, setServerOffline] = useState(false);
 
   useEffect(() => {
     if (isLoggedIn) router.replace('/');
@@ -158,7 +157,6 @@ export default function LoginPage() {
     setTab(t);
     setError('');
     setSuccess('');
-    setServerOffline(false);
     setOtpSent(false);
     setOtp(['', '', '', '', '', '']);
     setCountdown(0);
@@ -168,37 +166,22 @@ export default function LoginPage() {
   const handlePasswordLogin = async (e) => {
     e.preventDefault();
     setError('');
-    setServerOffline(false);
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
       login(res.data.user, res.data.token);
       router.replace('/');
     } catch (err) {
-      if (err.friendlyMessage) {
-        setServerOffline(true);
-      } else {
-        setError(err.response?.data?.error || 'Login failed. Please try again.');
-      }
+      setError(err.friendlyMessage || err.response?.data?.error || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  };
-
-  // ── Demo login (no server needed) ──
-  const handleDemoLogin = () => {
-    login(
-      { name: 'Demo User', email: 'demo@railnexus.in', role: 'engineer' },
-      'demo-token'
-    );
-    router.replace('/');
   };
 
   // ── Send OTP ──
   const handleSendOtp = async (e) => {
     e.preventDefault();
     setError('');
-    setServerOffline(false);
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length < 10) {
       setError('Enter a valid 10-digit mobile number.');
@@ -216,11 +199,7 @@ export default function LoginPage() {
       }
       setTimeout(() => setSuccess(''), 5000);
     } catch (err) {
-      if (err.friendlyMessage) {
-        setServerOffline(true);
-      } else {
-        setError(err.response?.data?.error || 'Failed to send OTP. Please try again.');
-      }
+      setError(err.friendlyMessage || err.response?.data?.error || 'Failed to send OTP. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -230,7 +209,6 @@ export default function LoginPage() {
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setError('');
-    setServerOffline(false);
     const code = otp.join('');
     if (code.length < 6) {
       setError('Please enter the complete 6-digit OTP.');
@@ -242,11 +220,7 @@ export default function LoginPage() {
       login(res.data.user, res.data.token);
       router.replace('/');
     } catch (err) {
-      if (err.friendlyMessage) {
-        setServerOffline(true);
-      } else {
-        setError(err.response?.data?.error || 'OTP verification failed. Please try again.');
-      }
+      setError(err.friendlyMessage || err.response?.data?.error || 'OTP verification failed. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -476,28 +450,7 @@ export default function LoginPage() {
               {success}
             </motion.div>
           )}
-          {serverOffline && (
-            <motion.div initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-              style={{ marginTop: '12px', padding: '14px 16px', background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.3)', borderRadius: '10px', fontSize: '0.78rem' }}>
-              <p style={{ color: '#fcd34d', fontWeight: 700, marginBottom: '6px' }}>⚠ Backend server is offline</p>
-              <p style={{ color: 'rgba(255,255,255,0.5)', lineHeight: 1.5, marginBottom: '10px' }}>
-                Start the server first:<br />
-                <code style={{ color: '#fcd34d', fontSize: '0.75rem' }}>cd server &amp;&amp; npm run dev</code><br />
-                Then run the seed:<br />
-                <code style={{ color: '#fcd34d', fontSize: '0.75rem' }}>npm run seed</code>
-              </p>
-              <button
-                onClick={handleDemoLogin}
-                style={{
-                  width: '100%', padding: '9px', borderRadius: '8px',
-                  background: 'rgba(251,191,36,0.15)', border: '1px solid rgba(251,191,36,0.4)',
-                  color: '#fcd34d', fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer'
-                }}
-              >
-                Continue in Demo Mode →
-              </button>
-            </motion.div>
-          )}
+
         </AnimatePresence>
 
         <p style={{ textAlign: 'center', marginTop: '20px', color: 'rgba(255,255,255,0.28)', fontSize: '0.76rem' }}>

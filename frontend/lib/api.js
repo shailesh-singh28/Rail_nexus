@@ -27,17 +27,12 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Session expired — clear auth and redirect (but not for demo tokens)
+    // Session expired — clear auth and redirect
     if (error.response?.status === 401 && typeof window !== 'undefined') {
       try {
-        const stored = localStorage.getItem('railnexus-store');
-        const { state } = JSON.parse(stored || '{}');
-        // Don't redirect if using demo token
-        if (state?.token !== 'demo-token') {
-          localStorage.removeItem('railnexus-store');
-          window.location.href = '/login';
-          return Promise.reject(error);
-        }
+        localStorage.removeItem('railnexus-store');
+        window.location.href = '/login';
+        return Promise.reject(error);
       } catch {
         // ignore
       }
