@@ -243,7 +243,7 @@ async function seed() {
   await User.create({
     name: 'Test Engineer',
     email: 'engineer@railnexus.in',
-    phone: '9876543211',
+    phone: '9793975397',
     password: 'Engineer@1234',
     role: 'engineer',
     division: bilaspur._id
@@ -252,7 +252,7 @@ async function seed() {
   console.log('✅ Users seeded');
   console.log('\n🎉 Seed complete!');
   console.log('   Admin:    admin@railnexus.in    / Admin@1234 / Phone: 8127918849');
-  console.log('   Engineer: engineer@railnexus.in / Engineer@1234 / Phone: 9876543211');
+  console.log('   Engineer: engineer@railnexus.in / Engineer@1234 / Phone: 9793975397');
 
   await mongoose.disconnect();
 }
