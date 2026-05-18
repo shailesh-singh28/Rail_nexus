@@ -86,7 +86,7 @@ router.post('/send-otp', async (req, res) => {
         // Build the request query parameters for Procom Solution
         const queryParams = new URLSearchParams({
           username: process.env.SMS_USERNAME || '',
-          password: process.env.SMS_API_PASSWORD || '',
+          api_password: process.env.SMS_API_PASSWORD || '',
           sender: process.env.SMS_SENDER_ID || '',
           to: cleaned, // Standard Indian gateway parameter
           mobile: cleaned, // Fallback parameter
