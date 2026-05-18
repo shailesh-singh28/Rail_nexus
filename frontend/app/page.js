@@ -104,8 +104,6 @@ export default function Home() {
     if (!store.isLoggedIn) router.replace('/login');
   }, [store.isLoggedIn, router]);
 
-  if (!store.isLoggedIn) return null;
-
   // ── Breadcrumbs ───────────────────────────────────────
   const breadcrumbItems = useMemo(() => {
     const items = [];
@@ -289,6 +287,8 @@ export default function Home() {
       </div>
     );
   };
+
+  if (!store.isLoggedIn) return null;
 
   return (
     <main style={{ background: 'var(--background)', minHeight: '100vh' }}>
