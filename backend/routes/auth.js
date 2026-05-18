@@ -93,11 +93,15 @@ router.post('/send-otp', async (req, res) => {
           mobiles: cleaned, // Fallback 2
           receiver: cleaned, // Fallback 3
           message: smsMessage,
-          unicode: process.env.SMS_UNICODE || '1',
           priority: process.env.SMS_PRIORITY || '11',
           entityid: process.env.SMS_ENTITY_ID || '',
           entity_id: process.env.SMS_ENTITY_ID || ''
         });
+
+        // Add unicode parameter only if explicitly set and not '0' (English standard plain text)
+        if (process.env.SMS_UNICODE && process.env.SMS_UNICODE !== '0') {
+          queryParams.append('unicode', process.env.SMS_UNICODE);
+        }
 
         // Add DLT Template ID variations to be completely bulletproof
         if (process.env.SMS_TEMPLATE_ID) {
