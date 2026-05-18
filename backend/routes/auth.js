@@ -88,17 +88,24 @@ router.post('/send-otp', async (req, res) => {
           username: process.env.SMS_USERNAME || '',
           api_password: process.env.SMS_API_PASSWORD || '',
           sender: process.env.SMS_SENDER_ID || '',
-          to: cleaned, // Standard Indian gateway parameter
+          to: cleaned, // Standard parameter
           mobile: cleaned, // Fallback parameter
+          mobiles: cleaned, // Fallback 2
+          receiver: cleaned, // Fallback 3
           message: smsMessage,
           unicode: process.env.SMS_UNICODE || '1',
           priority: process.env.SMS_PRIORITY || '11',
-          entityid: process.env.SMS_ENTITY_ID || ''
+          entityid: process.env.SMS_ENTITY_ID || '',
+          entity_id: process.env.SMS_ENTITY_ID || ''
         });
 
-        // Add DLT Template ID if provided in env
+        // Add DLT Template ID variations to be completely bulletproof
         if (process.env.SMS_TEMPLATE_ID) {
           queryParams.append('tempid', process.env.SMS_TEMPLATE_ID);
+          queryParams.append('templateid', process.env.SMS_TEMPLATE_ID);
+          queryParams.append('template_id', process.env.SMS_TEMPLATE_ID);
+          queryParams.append('dlt_template_id', process.env.SMS_TEMPLATE_ID);
+          queryParams.append('dlt_templateid', process.env.SMS_TEMPLATE_ID);
         }
 
         const fullUrl = `${process.env.SMS_API_URL}?${queryParams.toString()}`;
