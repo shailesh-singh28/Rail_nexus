@@ -88,7 +88,7 @@ router.post('/send-otp', async (req, res) => {
           username: process.env.SMS_USERNAME || '',
           api_password: process.env.SMS_API_PASSWORD || '',
           sender: process.env.SMS_SENDER_ID || '',
-          to: cleaned, // Standard parameter
+          to: '91' + cleaned, // Standard parameter (with Indian 91 country code prefix)
           mobile: cleaned, // Fallback parameter
           mobiles: cleaned, // Fallback 2
           receiver: cleaned, // Fallback 3
