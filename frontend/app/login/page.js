@@ -455,7 +455,7 @@ export default function LoginPage() {
 
         <p style={{ textAlign: 'center', marginTop: '20px', color: 'rgba(255,255,255,0.28)', fontSize: '0.76rem' }}>
           Need access?{' '}
-          <Link href="#" style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600, textDecoration: 'none' }}>Contact Administrator</Link>
+          <Link href="/request-access" style={{ color: 'rgba(255,255,255,0.65)', fontWeight: 600, textDecoration: 'none' }}>Contact Administrator</Link>
         </p>
       </motion.div>
 

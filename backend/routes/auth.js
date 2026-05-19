@@ -81,7 +81,7 @@ router.post('/send-otp', async (req, res) => {
 
     if (process.env.SMS_ENABLED === 'true' && process.env.SMS_API_URL) {
       try {
-        const smsMessage = `Your login OTP is ${otp}. Do Not Share With Anyone. - STSECR`;
+        const smsMessage = `Your OTP for RailNexus login is ${otp}. Valid for 5 minutes. Do not share this OTP with anyone. - STSECR`;
         
         // Build the request query parameters for Procom Solution
         const queryParams = new URLSearchParams({
@@ -98,7 +98,8 @@ router.post('/send-otp', async (req, res) => {
           entity_id: process.env.SMS_ENTITY_ID || ''
         });
 
-        // Add unicode parameter only if explicitly set and not '0' (English standard plain text)
+        // Add unicode parameter only for non-English (Unicode) messages
+        // Do NOT send unicode=0 — some gateways reject it; omitting it defaults to plain text
         if (process.env.SMS_UNICODE && process.env.SMS_UNICODE !== '0') {
           queryParams.append('unicode', process.env.SMS_UNICODE);
         }
@@ -114,11 +115,24 @@ router.post('/send-otp', async (req, res) => {
 
         const fullUrl = `${process.env.SMS_API_URL}?${queryParams.toString()}`;
         console.log(`📡 Sending SMS via Procom Solution to +91${cleaned}...`);
+        console.log(`📡 Request URL: ${fullUrl}`);
         
         const smsRes = await fetch(fullUrl, { method: 'GET' });
         const smsTextResponse = await smsRes.text();
         
-        console.log(`📱 Procom Solution Response:`, smsTextResponse);
+        console.log(`📱 Procom Solution HTTP Status: ${smsRes.status}`);
+        console.log(`📱 Procom Solution Response: "${smsTextResponse}"`);
+
+        // Most SMS gateways return a numeric ID or "success" on success
+        // and "error", "fail", or negative number on failure
+        const isError = /error|fail|invalid|unauthorized|denied/i.test(smsTextResponse)
+          || smsTextResponse.trim().startsWith('-');
+
+        if (isError) {
+          console.error(`❌ SMS gateway returned error: ${smsTextResponse}`);
+          throw new Error(`SMS gateway error: ${smsTextResponse}`);
+        }
+
         smsSent = true;
         gatewayUsed = 'Procom Solution';
       } catch (smsError) {
@@ -270,6 +284,61 @@ router.post('/register', async (req, res) => {
   } catch (err) {
     console.error('Registration error:', err);
     res.status(500).json({ error: 'Registration failed. Please try again.' });
+  }
+});
+
+// ── POST /api/auth/request-access ────────────────────────
+// Submit a guest account access request
+router.post('/request-access', async (req, res) => {
+  try {
+    const { name, email, phone, division, password } = req.body;
+    const AccessRequest = require('../models/AccessRequest');
+
+    if (!name || !email || !phone || !division || !password) {
+      return res.status(400).json({ error: 'All fields (name, email, phone, division, password) are required.' });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters.' });
+    }
+
+    const cleanedPhone = phone.replace(/\D/g, '').slice(-10);
+    if (cleanedPhone.length !== 10) {
+      return res.status(400).json({ error: 'Enter a valid 10-digit mobile number.' });
+    }
+
+    // Check if phone or email already registered
+    const existingUser = await User.findOne({
+      $or: [{ email: email.toLowerCase() }, { phone: cleanedPhone }]
+    });
+    if (existingUser) {
+      return res.status(400).json({ error: 'An active user account is already registered with this email or phone number.' });
+    }
+
+    // Check if there is already a pending request
+    const existingRequest = await AccessRequest.findOne({
+      $or: [{ email: email.toLowerCase() }, { phone: cleanedPhone }],
+      status: 'pending'
+    });
+    if (existingRequest) {
+      return res.status(400).json({ error: 'You have a pending request. Please wait for administrator approval.' });
+    }
+
+    const newRequest = await AccessRequest.create({
+      name,
+      email: email.toLowerCase(),
+      phone: cleanedPhone,
+      division,
+      password
+    });
+
+    res.status(201).json({
+      message: 'Access request submitted successfully. Administrator has been notified.',
+      request: newRequest
+    });
+  } catch (err) {
+    console.error('Access request error:', err);
+    res.status(500).json({ error: 'Failed to submit request. Please try again.' });
   }
 });
 

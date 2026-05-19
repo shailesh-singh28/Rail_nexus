@@ -18,6 +18,7 @@ const testTypeRoutes = require('./routes/testTypes');
 const parameterRoutes = require('./routes/parameters');
 const formSchemaRoutes = require('./routes/formSchemas');
 const reportRoutes = require('./routes/reports');
+const userRoutes = require('./routes/users');
 
 const app = express();
 
@@ -68,6 +69,7 @@ app.use('/api/test-types', testTypeRoutes);
 app.use('/api/parameters', parameterRoutes);
 app.use('/api/formschema', formSchemaRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -94,8 +96,19 @@ mongoose
   .connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/railnexus')
   .then(() => {
     console.log('✅ MongoDB connected');
-    app.listen(PORT, () => {
+    const server = app.listen(PORT, () => {
       console.log(`🚀 RailNexus API running on http://localhost:${PORT}`);
+    });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`❌ Port ${PORT} is already in use.`);
+        console.error(`   Run this to free it: npx kill-port ${PORT}`);
+        console.error(`   Or change PORT in .env to another number (e.g. 5001)`);
+        process.exit(1);
+      } else {
+        throw err;
+      }
     });
   })
   .catch((err) => {

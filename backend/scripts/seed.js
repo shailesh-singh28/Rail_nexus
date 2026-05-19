@@ -19,7 +19,7 @@ const FormSchema = require('../models/FormSchema');
 const User = require('../models/User');
 
 async function seed() {
-  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/railnexus');
+  await mongoose.connect(process.env.MONGODB_URI || 'mongodb://slvg_railway:5mtBzof2KsWupjvI@ac-hnkve1o-shard-00-00.r6uwyll.mongodb.net:27017,ac-hnkve1o-shard-00-01.r6uwyll.mongodb.net:27017,ac-hnkve1o-shard-00-02.r6uwyll.mongodb.net:27017/railnexus?ssl=true&replicaSet=atlas-sw5zrq-shard-0&authSource=admin');
   console.log('✅ Connected to MongoDB');
 
   // Clear existing data

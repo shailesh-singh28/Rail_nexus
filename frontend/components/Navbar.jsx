@@ -7,7 +7,7 @@ import useAppStore from '@/store/useAppStore';
 
 const Navbar = ({ logoOnly = false }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const { isLoggedIn, logout } = useAppStore();
+  const { isLoggedIn, loggedInUser, logout } = useAppStore();
 
   const handleLogout = () => {
     logout();
@@ -49,9 +49,11 @@ const Navbar = ({ logoOnly = false }) => {
           <>
             {/* Desktop Links */}
             <div className="nav-links">
-              <Link href="#" style={navLinkStyle}>Dashboard</Link>
+              <Link href="/" style={navLinkStyle}>Dashboard</Link>
               <Link href="#" style={navLinkStyle}>Reports</Link>
-              <Link href="#" style={navLinkStyle}>Settings</Link>
+              {isLoggedIn && loggedInUser?.role === 'admin' && (
+                <Link href="/admin/users" style={navLinkStyle}>User Management</Link>
+              )}
             </div>
 
             {/* Desktop Actions */}
@@ -103,9 +105,11 @@ const Navbar = ({ logoOnly = false }) => {
               <div style={{ width: '80px', height: '80px', borderRadius: '20px', overflow: 'hidden', marginBottom: '20px' }}>
                 <img src="/logo.png" alt="RailNexus" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
               </div>
-              <Link href="#" onClick={() => setIsOpen(false)} style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 600, textDecoration: 'none' }}>Dashboard</Link>
+              <Link href="/" onClick={() => setIsOpen(false)} style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 600, textDecoration: 'none' }}>Dashboard</Link>
               <Link href="#" onClick={() => setIsOpen(false)} style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 600, textDecoration: 'none' }}>Reports</Link>
-              <Link href="#" onClick={() => setIsOpen(false)} style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 600, textDecoration: 'none' }}>Settings</Link>
+              {isLoggedIn && loggedInUser?.role === 'admin' && (
+                <Link href="/admin/users" onClick={() => setIsOpen(false)} style={{ fontSize: '1.5rem', color: '#fff', fontWeight: 600, textDecoration: 'none' }}>User Management</Link>
+              )}
               <div style={{ height: '1px', width: '60px', background: 'rgba(255,255,255,0.1)' }} />
               {isLoggedIn ? (
                 <button

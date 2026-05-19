@@ -4,8 +4,8 @@ const { protect, restrict } = require('../middleware/auth');
 
 const router = express.Router();
 
-// GET /api/divisions — list all active divisions
-router.get('/', protect, async (req, res) => {
+// GET /api/divisions — list all active divisions (public)
+router.get('/', async (req, res) => {
   try {
     const divisions = await Division.find({ isActive: true }).sort('name');
     res.json(divisions);
